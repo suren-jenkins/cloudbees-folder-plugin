@@ -140,7 +140,14 @@ public class PeriodicFolderTrigger extends Trigger<ComputedFolder<?>> {
             value = 1;
         }
         return Math.min(TimeUnit2.DAYS.toMillis(30),
-                Math.max(TimeUnit2.MINUTES.toMillis(1), units.toMillis(value)));
+                Math.max(TimeUnit2.MINUTES.toMillis(1), units.toMillis(value)))
+            - TimeUnit2.SECONDS.toMillis(1); // to prevent sympathetic harmonization
+        // the thread will wake a multiple of every 60 seconds.
+        // interval can only ever be a multiple of 60 seconds
+        // so unless the system is under heavy thread contention, we will likely
+        // see 60 seconds since last run as not > 60 second interval
+        // by subtracting 1 second, we catch the issue and save 1 minute on each interval
+        // otherwise 1 min interval == run every 2 min; 2 min interval == run every 3, etc
     }
 
     /**
